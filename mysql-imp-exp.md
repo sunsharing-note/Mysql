@@ -1,3 +1,5 @@
+参考：[传送](https://blog.csdn.net/fuzhongfaya/article/details/80984608 "原文链接")
+
 + **1、导出某个表的数据**
 
 `mysqldump -u userName -p  dabaseName tableName > fileName.sql`

@@ -1,103 +1,35 @@
-#!/bin/bash
-# mysql_backup.sh: backup mysql databases and keep newest 5 days backup.  
-#  
-# ${db_user} is mysql username  
-# ${db_password} is mysql password  
-# ${db_host} is mysql host   
-# ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¨C  
-#/root/mysql_backup.sh
-# everyday 3:00 AM execute database backup
-# 0 3 * * * /root/mysql_backup.sh
-#/etc/cron.daily
-
-db_user="backup"
-db_password="8H2QQQBEypp"
-db_host="localhost"
-# the directory for story your backup file.  #
-backup_dir="/home/backup/mysql/"
-# Òª±¸·ÝµÄÊý¾Ý¿âÃû #
-#all_db="$(${mysql} -u ${db_user} -h ${db_host} -p${db_password} -Bse 'show databases')" #
-all_db="dbname"
-
-# Òª±£ÁôµÄ±¸·ÝÌìÊý #
-backup_day=10
-
-#Êý¾Ý¿â±¸·ÝÈÕÖ¾ÎÄ¼þ´æ´¢µÄÂ·¾¶
-logfile="/var/log/mysql_backup.log"
-
-###ssh¶Ë¿ÚºÅ###
-ssh_port=1204
-###¶¨Òåssh auto keyµÄÎÄ¼þ###
-id_rsa=/root/auth_key/id_rsa_153.141.rsa
-###¶¨Òåssh auto username###
-id_rsa_user=rsync
-###¶¨ÒåÒªÍ¬²½µÄÔ¶³Ì·þÎñÆ÷µÄÄ¿Â¼Â·¾¶£¨±ØÐëÊÇ¾ø¶ÔÂ·¾¶£©###
-clientPath="/home/backup/mysql"
-###¶¨ÒåÒª¾µÏñµÄ±¾µØÎÄ¼þÄ¿Â¼Â·¾¶ Ô´·þÎñÆ÷£¨±ØÐëÊÇ¾ø¶ÔÂ·¾¶£©###
-serverPath=${backup_dir}
-###¶¨ÒåÉú²ú»·¾³µÄip###
-web_ip="192.168.0.2"
-
-# date format for backup file (dd-mm-yyyy)  #
-time="$(date +"%Y-%m-%d")"
-
-# mysql, ${mysqldump} and some other bin's path  #
-mysql="/usr/local/mysql-5.5.33/bin/mysql"
-mysqldump="/usr/local/mysql-5.5.33/bin/mysqldump"
-
-# the directory for story the newest backup  #
-test ! -d ${backup_dir} && mkdir -p ${backup_dir}
-
-#±¸·ÝÊý¾Ý¿âº¯Êý#
-mysql_backup()
-{
-    # È¡ËùÓÐµÄÊý¾Ý¿âÃû #
-    for db in ${all_db}
-    do
-        backname=${db}.${time}
-        dumpfile=${backup_dir}${backname}
-        
-        #½«±¸·ÝµÄÊ±¼ä¡¢Êý¾Ý¿âÃû´æÈëÈÕÖ¾
-        echo "------"$(date +'%Y-%m-%d %T')" Beginning database "${db}" backup--------" >>${logfile}
-        ${mysqldump} -F -u${db_user} -h${db_host} -p${db_password} ${db} > ${dumpfile}.sql 2>>${logfile} 2>&1
-        
-        #¿ªÊ¼½«Ñ¹ËõÊý¾ÝÈÕÖ¾Ð´Èëlog
-        echo $(date +'%Y-%m-%d %T')" Beginning zip ${dumpfile}.sql" >>${logfile}
-        #½«±¸·ÝÊý¾Ý¿âÎÄ¼þ¿âÑ¹³ÉZIPÎÄ¼þ£¬²¢É¾³ýÏÈÇ°µÄSQLÎÄ¼þ. #
-        tar -czvf ${backname}.tar.gz ${backname}.sql 2>&1 && rm ${dumpfile}.sql 2>>${logfile} 2>&1 
-        
-        #½«Ñ¹ËõºóµÄÎÄ¼þÃû´æÈëÈÕÖ¾¡£
-        echo "backup file name:"${dumpfile}".tar.gz" >>${logfile}
-        echo -e "-------"$(date +'%Y-%m-%d %T')" Ending database "${db}" backup-------\n" >>${logfile}    
-    done
+#/bin/bash
+db_user="zabbix"
+db_password="zabbix"
+#å®šä¹‰å¤‡ä»½ç›®å½•
+bakdir="/mysql/data/"
+#å®šä¹‰å¤‡ä»½æ—¥å¿—
+logfile="/mysql/mysql_backup.log"
+db_name="zabbix"
+#å®šä¹‰è¦ä¿ç•™çš„å¤©æ•°
+backup_day=7
+#å®šä¹‰æ—¥æœŸæ ¼å¼
+dateformat="$(date +'%Y-%m-%d')"
+mysql="/usr/local/mysql/bin/mysql"
+mysqldump="/usr/local/mysql/bin/mysqldump"
+[ ! -d ${bakdir} ] && mkdir -p ${bakdir}
+#å®šä¹‰å¤‡ä»½å‡½æ•°
+mysql_backup(){
+	backname=${db_name}.${dateformat}
+        dumpfile=${bakdir}${backname}
+	#å°†å¤‡ä»½æ•°æ®åº“å’Œæ—¥æœŸå†™å…¥å¤‡ä»½æ—¥å¿—
+	echo "------"$(date +'%Y-%m-%d %T')" Beginning database ${db_name} backup------">>${logfile}
+	${mysqldump} -F -u${db_user} -p${db_password} --single-transaction --master-data=2 ${db_name} > ${dumpfile}.sql 2>>${logfile} 2>&1
+	echo -e "------"$(date +'%Y-%m-%d %T')" Ending database "${db_name}" backup---------\n" >>${logfile}
+	
 }
-
-delete_old_backup()
-{    
-    echo "delete backup file:" >>${logfile}
-    # É¾³ý¾ÉµÄ±¸·Ý ²éÕÒ³öµ±Ç°Ä¿Â¼ÏÂÆßÌìÇ°Éú³ÉµÄÎÄ¼þ£¬²¢½«Ö®É¾³ý
-    find ${backup_dir} -type f -mtime +${backup_day} | tee delete_list.log | xargs rm -rf
-    cat delete_list.log >>${logfile}
+#å®šä¹‰åˆ é™¤å‡½æ•°
+delete_old_backup(){
+	echo "delete backup file: " >>${logfile}
+	#åˆ é™¤ä¸ƒå¤©ä»¥å‰çš„å¤‡ä»½
+	find ${bakdir} -type f -mtime +${backup_day} |tee delete_backup.log |xargs rm -rf
+	cat delete_backup.log >>${logfile}
 }
-
-rsync_mysql_backup()
-{
-    # rsync Í¬²½µ½ÆäËûServerÖÐ #
-    for j in ${web_ip}
-    do                
-        echo "mysql_backup_rsync to ${j} begin at "$(date +'%Y-%m-%d %T') >>${logfile}
-        ### Í¬²½ ###
-        rsync -avz --progress --delete $serverPath -e "ssh -p "${ssh_port}" -i "${id_rsa} ${id_rsa_user}@${j}:$clientPath >>${logfile} 2>&1 
-        echo "mysql_backup_rsync to ${j} done at "$(date +'%Y-%m-%d %T') >>${logfile}
-    done
-}
-
-#½øÈëÊý¾Ý¿â±¸·ÝÎÄ¼þÄ¿Â¼
-cd ${backup_dir}
-
 mysql_backup
 delete_old_backup
-rsync_mysql_backup
-
-echo -e "========================mysql backup && rsync done at "$(date +'%Y-%m-%d %T')"============================\n\n">>${logfile}
-cat ${logfile}
+echo -e "=============mysql backup done at "$(date +'%Y-%m-%d %T')"=============\n\n" >>${logfile}
